@@ -111,7 +111,9 @@ def get_dino_points_inf(point_list):
     # Calculate the number of selected points
     num_points = len(selected_points)
 
-    # Initialize the color index and step size for color transition
+    # Initialize the animation variables
+    color_start = (255, 0, 0)  # Red
+    color_end = (0, 0, 255)    # Blue
     color_index = 0
     color_step = 2  # Change this value to control the speed of the color transition
 
@@ -123,17 +125,27 @@ def get_dino_points_inf(point_list):
                 pygame.quit()
                 exit()
 
-        # Iterate through the selected points and draw them with a gradient
+        # Calculate the current color based on the percentage of animation completion
+        percentage_complete = color_index / num_points
+        gradient_color = (
+            int(color_start[0] * (1 - percentage_complete) + color_end[0] * percentage_complete),
+            int(color_start[1] * (1 - percentage_complete) + color_end[1] * percentage_complete),
+            int(color_start[2] * (1 - percentage_complete) + color_end[2] * percentage_complete)
+        )
+
+        # Iterate through the selected points and draw them with the gradient color
         for i, p in enumerate(selected_points):
             if is_inside_polygon(point_list, p):
-                # Calculate the gradient color based on the current color index
-                r, g, b = gradient_colors[color_index]
-                pygame.draw.aaline(canvas, (r, g, b), p, p)
+                pygame.draw.aaline(canvas, current_color, p, p)
 
             # Increment the color index with wrap-around
             color_index = (color_index + color_step) % len(gradient_colors)
-            pygame.draw.rect(canvas, rect_color, pygame.Rect(30, 30, 60, 60))
-            pygame.display.update()
+            current_color = gradient_colors[color_index]
+
+
+        pygame.draw.rect(canvas, rect_color, pygame.Rect(30, 30, 60, 60))
+        pygame.display.update()
+
         
     
 
@@ -143,14 +155,16 @@ def get_dino_points_inf(point_list):
 #     # Create a list of points from 200,300 to 400,300 with increment 1
 #     line_points = get_dino_points(read_points(file='./pygame/dino.txt'))
 
-
 # Driver code
 if __name__ == '__main__':
     pygame.init()
+
     # Get the directory where the script is located
     script_dir = os.path.dirname(__file__)
+
     # Define the relative path to your file
-    relative_path = 'dino.txt'
+    relative_path = 'rotated_dino.txt'
+
     # Create the full path by joining the script directory and relative path
     full_path = os.path.join(script_dir, relative_path)
     # Now, full_path contains the absolute path to your file based on the script's location
@@ -159,7 +173,7 @@ if __name__ == '__main__':
     rect_color = (255, 100, 0)
 
     # CREATING CANVAS
-    canvas = pygame.display.set_mode((1920, 1080))
+    canvas = pygame.display.set_mode((600, 600))
 
     # TITLE OF CANVAS
     pygame.display.set_caption("UCCG Polygon from Files")
