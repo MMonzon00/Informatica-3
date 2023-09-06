@@ -1,6 +1,7 @@
 # Example of a simple polygon from a list of points from a file
 import pygame
 import os
+import random
 
 gradient_colors = {
     "Red": (255, 0, 0),
@@ -14,6 +15,19 @@ gradient_colors = {
     "Navy": (0, 0, 128),
     "Gray": (128, 128, 128)
 }
+
+
+def get_random_point_inside_polygon(point_list):
+    max_x = max(point_list, key=lambda x: x[0])[0]
+    min_x = min(point_list, key=lambda x: x[0])[0]
+    max_y = max(point_list, key=lambda x: x[1])[1]
+    min_y = min(point_list, key=lambda x: x[1])[1]
+
+    while True:
+        random_x = random.randint(min_x, max_x)
+        random_y = random.randint(min_y, max_y)
+        if is_inside_polygon(point_list, (random_x, random_y)):
+            return random_x, random_y
 
 
 #from pygame003_intersect import is_inside_polygon
@@ -61,7 +75,7 @@ def polygon(canvas, point_list, color):
         p1 = p2
         line += 1
 
-def get_dino_points(point_list):
+def get_dino_points_linear(point_list):
     # Calculate the bounding box of the polygon
     max_x = max(point_list, key=lambda x: x[0])[0]
     min_x = min(point_list, key=lambda x: x[0])[0]
@@ -95,8 +109,46 @@ def get_dino_points(point_list):
             color_index += color_step
     
     pygame.display.update()
-    
 
+
+
+def get_dino_points_axial(point_list, axis, axis_position):
+    max_x = max(point_list, key=lambda x: x[0])[0]
+    min_x = min(point_list, key=lambda x: x[0])[0]
+    max_y = max(point_list, key=lambda x: x[1])[1]
+    min_y = min(point_list, key=lambda x: x[1])[1]
+
+    def calculate_gradient_color(point, axis, axis_position, max_x, min_x, max_y, min_y):
+        if axis == "horizontal":
+            distance = abs(point[0] - axis_position)
+        elif axis == "vertical":
+            distance = abs(point[1] - axis_position)
+        else:
+            distance = 0
+
+        max_distance = max(max_x - min_x, max_y - min_y)  # Adjust this based on your polygon size
+        normalized_distance = min(1.0, distance / max_distance)
+        
+        # Calculate the color based on interpolation
+        color_start = gradient_colors["Red"]
+        color_end = gradient_colors["Yellow"]
+
+        r = int(color_start[0] * (1 - normalized_distance) + color_end[0] * normalized_distance)
+        g = int(color_start[1] * (1 - normalized_distance) + color_end[1] * normalized_distance)
+        b = int(color_start[2] * (1 - normalized_distance) + color_end[2] * normalized_distance)
+
+        return r, g, b
+
+
+
+
+    selected_points = [(x, y) for x in range(min_x, max_x + 1) for y in range(min_y, max_y + 1)]
+
+    for p in selected_points:
+        if is_inside_polygon(point_list, p):
+            gradient_color = calculate_gradient_color(p, axis, axis_position, max_x, min_x, max_y, min_y)
+            pygame.draw.aaline(canvas, gradient_color, p, p)
+            pygame.display.update()
 
 def get_dino_points_inf(point_list):
     # Calculate the bounding box of the polygon
@@ -112,10 +164,12 @@ def get_dino_points_inf(point_list):
     num_points = len(selected_points)
 
     # Initialize the animation variables
-    color_start = (255, 0, 0)  # Red
-    color_end = (0, 0, 255)    # Blue
+    color_start = gradient_colors["Green"] 
+    color_end = gradient_colors["Yellow"]   
     color_index = 0
     color_step = 2  # Change this value to control the speed of the color transition
+
+    
 
     # Main loop for animation
     while True:
@@ -158,7 +212,7 @@ def get_dino_points_inf(point_list):
 # Driver code
 if __name__ == '__main__':
     pygame.init()
-
+    fill_type=input('Choose fill type: ')
     # Get the directory where the script is located
     script_dir = os.path.dirname(__file__)
 
@@ -179,15 +233,32 @@ if __name__ == '__main__':
     pygame.display.set_caption("UCCG Polygon from Files")
 
     exit = False
+    if fill_type == 'linear':
+        while not exit:
+            canvas.fill(color)
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    exit = True
+            polygon(canvas, read_points(full_path), rect_color)
+            get_dino_points_linear(read_points(full_path))
+            #get_dino_points_inf(read_points(full_path))
+        exit
+    
+    if fill_type == 'axial':
+        axis = "horizontal"  # Choose "horizontal" or "vertical"
+        axis_position = 600  # Adjust this position based on your canvas size
 
-    while not exit:
-        canvas.fill(color)
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                exit = True
-        polygon(canvas, read_points(full_path), rect_color)
-        get_dino_points(read_points(full_path))
-        #get_dino_points_inf(read_points(full_path))
+        while not exit:
+            canvas.fill(color)
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    exit = True
+
+            polygon(canvas, read_points(file_path=full_path), rect_color)
+            get_dino_points_axial(read_points(file_path=full_path), axis, axis_position)  # Call with axis and position
+            pygame.draw.rect(canvas, rect_color, pygame.Rect(30, 30, 60, 60))
+            pygame.display.update()
+
 
 
 # Quit Pygame
